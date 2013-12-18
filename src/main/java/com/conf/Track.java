@@ -62,7 +62,7 @@ class Track {
                 return talk;
             }
         }
-        throw new IllegalStateException();
+        throw new NoTalkFoundException();
     }
 
     boolean cancelTalk(String talkName) {
@@ -155,15 +155,6 @@ class Track {
         }
     }
 
-/* 151:    */
+    public class NoTalkFoundException extends RuntimeException {
+    }
 }
-
-
-
-/* Location:           F:\codebases\codekata\confmangt\target\classes\
-
- * Qualified Name:     com.conf.Track
-
- * JD-Core Version:    0.7.0.1
-
- */

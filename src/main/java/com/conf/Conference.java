@@ -65,21 +65,14 @@ public class Conference {
                 return track;
             }
         }
-        throw new RuntimeException();
+        throw new NoTrackFoundException();
     }
 
     public boolean cancelTalk(String trackName, String talkName) {
         Track track = findTrack(trackName);
         return track.cancelTalk(talkName);
     }
+
+    public class NoTrackFoundException extends RuntimeException {
+    }
 }
-
-
-
-/* Location:           F:\codebases\codekata\confmangt\target\classes\
-
- * Qualified Name:     com.conf.Conference
-
- * JD-Core Version:    0.7.0.1
-
- */
