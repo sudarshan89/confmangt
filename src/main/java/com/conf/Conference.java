@@ -6,6 +6,9 @@ import java.util.List;
 import org.joda.time.Duration;
 import org.joda.time.LocalTime;
 
+/**
+ * Lets move to lambdas
+ */
 public class Conference {
     private Integer noOfTracks;
     private final String name;
