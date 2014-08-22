@@ -1,6 +1,5 @@
 package com.conf;
 
-import org.hamcrest.CoreMatchers;
 import org.joda.time.Duration;
 import org.joda.time.LocalTime;
 import org.junit.Assert;
