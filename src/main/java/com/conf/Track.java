@@ -7,8 +7,8 @@ import java.util.*;
 
 class Track {
 
-    private static final Talk BUFFER_TALK = new Talk("EMPTY TALK");
-    private static final Talk NETWORKING_SESSION = new Talk("Networking Session");
+    public static final String NETWORKING_SESSION = "Networking Session";
+    public static final String EMPTY_TALK = "EMPTY TALK";
 
     final String name;
 
@@ -20,12 +20,12 @@ class Track {
 
             @Override
             public LocalTime startsAt() {
-                return LocalTime.parse("T09:00:00");
+                return LocalTime.parse("09:00:00");
             }
 
             @Override
             public LocalTime endsAt() {
-                return LocalTime.parse("T12:00:00");
+                return LocalTime.parse("12:00:00");
             }
 
             @Override
@@ -33,6 +33,7 @@ class Track {
                 return timeConsumed;
             }
 
+            @Override
             public Duration maxDuration() {
                 return Duration.ofMinutes(180L);
             }
@@ -58,17 +59,25 @@ class Track {
                 return maxDuration().minus(timeConsumed);
             }
 
+            @Override
+            public Talk scheduleFillerTalk() {
+                LocalTime startsOn = startsAt().plusMinutes(timeConsumed().toMinutes());
+                Talk fillerTalk = new Talk(EMPTY_TALK, timeAvailable());
+                fillerTalk.schedule(startsOn);
+                return fillerTalk;
+            }
+
         }, NOON {
             private Duration timeConsumed = Duration.ofMinutes(0L);
 
             @Override
             public LocalTime startsAt() {
-                return LocalTime.parse("T13:00:00");
+                return LocalTime.parse("13:00:00");
             }
 
             @Override
             public LocalTime endsAt() {
-                return LocalTime.parse("T17:00:00");
+                return LocalTime.parse("17:00:00");
             }
 
             @Override
@@ -76,6 +85,7 @@ class Track {
                 return timeConsumed;
             }
 
+            @Override
             public Duration maxDuration() {
                 return Duration.ofMinutes(240L);
             }
@@ -87,7 +97,7 @@ class Track {
             @Override
             public boolean canScheduleTalk(Duration talkDuration) {
                 final Duration spareTime = timeAvailable().minus(talkDuration);
-                return isGreaterThan(spareTime,Duration.ofMinutes(0L));
+                return isGreaterThan(spareTime, Duration.ofMinutes(0L));
 
             }
 
@@ -100,10 +110,29 @@ class Track {
             public Duration timeAvailable() {
                 return maxDuration().minus(timeConsumed);
             }
+
+            @Override
+            public Talk scheduleFillerTalk() {
+                LocalTime startsOn = startsAt().plusMinutes(timeConsumed().toMinutes());
+                Duration fillerTalkDuration = Duration.ofMinutes(Math.min(Duration.ofHours(1L).toMinutes(), timeAvailable().toMinutes()));
+                Talk networkingEvent = new Talk(NETWORKING_SESSION, fillerTalkDuration);
+                if (isNetworkingSessionForOneHour(fillerTalkDuration)) {
+                    networkingEvent.schedule(LocalTime.of(16, 0));
+                } else {
+                    networkingEvent.schedule(startsOn);
+                }
+                return networkingEvent;
+            }
+
+            private boolean isNetworkingSessionForOneHour(Duration fillerTalkDuration) {
+                return fillerTalkDuration.toMinutes() == 60;
+            }
         };
 
         private Session() {
         }
+
+        public abstract Duration maxDuration();
 
         public abstract LocalTime startsAt();
 
@@ -117,6 +146,8 @@ class Track {
 
         public abstract Duration timeAvailable();
 
+        public abstract Talk scheduleFillerTalk();
+
     }
 
     final List<Talk> talks = new ArrayList<>();
@@ -125,48 +156,41 @@ class Track {
         this.name = name;
     }
 
-    /**
-     * @TODO Test
-     * @return
-     */
-
     List<Talk> scheduleTalks(List<Talk> unscheduledTalks) {
-        Talk smallestTalk =unscheduledTalks.stream().min(Comparator.comparing(unscheduledTalk -> unscheduledTalk.talkDuration)).get();
+        Talk smallestTalk = unscheduledTalks.stream().min(Comparator.comparing(unscheduledTalk -> unscheduledTalk.talkDuration)).get();
 
         for (Session session : Session.values()) {
-            while (session.canScheduleTalk(smallestTalk.talkDuration)){
+            while (session.canScheduleTalk(smallestTalk.talkDuration)) {
 
-                final Optional<Talk> talkToSchedule = findTalkToSchedule(unscheduledTalks, session);
+                final Optional<Talk> talkToSchedule = FindTalkToSchedule(unscheduledTalks, session);
 
-                if(talkToSchedule.isPresent()){
+                if (talkToSchedule.isPresent()) {
                     Talk talk = talkToSchedule.get();
                     scheduleTalk(talk, session);
                     unscheduledTalks.remove(talk);
-                    smallestTalk =unscheduledTalks.stream().min(Comparator.comparing(unscheduledTalk -> unscheduledTalk.talkDuration)).get();
-                }else{
+                    smallestTalk = unscheduledTalks.stream().min(Comparator.comparing(unscheduledTalk -> unscheduledTalk.talkDuration)).get();
+                } else {
                     break;
                 }
             }
-
         }
-
         return talks;
     }
 
     /**
-     * @TODO Test
      * @param unscheduledTalks
      * @param session
      * @return
+     * @TODO Test
      */
-    Optional<Talk> findTalkToSchedule(List<Talk> unscheduledTalks, Session session) {
+    static Optional<Talk> FindTalkToSchedule(List<Talk> unscheduledTalks, Session session) {
         return unscheduledTalks.stream().filter(unscheduledTalk -> session.canScheduleTalk(unscheduledTalk.talkDuration))
-                            .max(Comparator.comparing(unscheduledTalk -> unscheduledTalk.talkDuration));
+                .max(Comparator.comparing(unscheduledTalk -> unscheduledTalk.talkDuration));
     }
 
     private void scheduleTalk(Talk talk, Session session) {
+        final LocalTime startsOn = session.startsAt().plusMinutes(session.timeConsumed().toMinutes());
         session.addTimeConsumed(talk.talkDuration);
-        final LocalTime startsOn = session.startsAt().plus(session.timeConsumed());
         talk.schedule(startsOn);
         talks.add(talk);
 
@@ -178,25 +202,31 @@ class Track {
         }
     }
 
-    public void scheduleNetworkingEvent() {
+    void scheduleNetworkingEvent() {
 
     }
 
-    public void scheduleEmptyTalks() {
-
+    void scheduleEmptyTalks() {
+        for (Session session : Session.values()) {
+            final Duration timeAvailableInSession = session.timeAvailable();
+            if (isGreaterThan(timeAvailableInSession, Duration.ofMinutes(0L))) {
+                final Talk fillerTalk = session.scheduleFillerTalk();
+                talks.add(fillerTalk);
+            }
+        }
     }
 
 
-    static boolean isGreaterThan(Duration left,Duration right){
+    static boolean isGreaterThan(Duration left, Duration right) {
         return left.compareTo(right) > 0;
     }
 
-    static boolean isLesserThan(Duration left,Duration right){
+    static boolean isLesserThan(Duration left, Duration right) {
         return left.compareTo(right) < 0;
     }
 
     public static void main(String[] args) {
-        System.out.println(isLesserThan(Duration.ofMinutes(1),Duration.ofMinutes(2)));
+        System.out.println(isLesserThan(Duration.ofMinutes(1), Duration.ofMinutes(2)));
     }
 
 }
