@@ -1,18 +1,23 @@
 package com.conf;
 
-import com.google.common.collect.Sets;
 
-import java.util.Set;
-
-import org.joda.time.Duration;
-import org.joda.time.LocalTime;
+import java.time.Duration;
+import java.time.LocalTime;
+import java.util.*;
 
 class Track {
+
+    private static final Talk BUFFER_TALK = new Talk("EMPTY TALK");
+    private static final Talk NETWORKING_SESSION = new Talk("Networking Session");
+
     final String name;
 
 
     public enum Session {
         MORNING {
+
+            private Duration timeConsumed = Duration.ofMinutes(0L);
+
             @Override
             public LocalTime startsAt() {
                 return LocalTime.parse("T09:00:00");
@@ -22,7 +27,40 @@ class Track {
             public LocalTime endsAt() {
                 return LocalTime.parse("T12:00:00");
             }
+
+            @Override
+            public Duration timeConsumed() {
+                return timeConsumed;
+            }
+
+            public Duration maxDuration() {
+                return Duration.ofMinutes(180L);
+            }
+
+            public Duration minDuration() {
+                return Duration.ofMinutes(180L);
+            }
+
+            @Override
+            public boolean canScheduleTalk(Duration talkDuration) {
+                final Duration spareTime = timeAvailable().minus(talkDuration);
+                return spareTime.compareTo(Duration.ofMinutes(0L)) > 0;
+
+            }
+
+            @Override
+            public Duration addTimeConsumed(Duration talkDuration) {
+                return timeConsumed = timeConsumed.plus(talkDuration);
+            }
+
+            @Override
+            public Duration timeAvailable() {
+                return maxDuration().minus(timeConsumed);
+            }
+
         }, NOON {
+            private Duration timeConsumed = Duration.ofMinutes(0L);
+
             @Override
             public LocalTime startsAt() {
                 return LocalTime.parse("T13:00:00");
@@ -31,6 +69,36 @@ class Track {
             @Override
             public LocalTime endsAt() {
                 return LocalTime.parse("T17:00:00");
+            }
+
+            @Override
+            public Duration timeConsumed() {
+                return timeConsumed;
+            }
+
+            public Duration maxDuration() {
+                return Duration.ofMinutes(240L);
+            }
+
+            public Duration minDuration() {
+                return Duration.ofMinutes(180L);
+            }
+
+            @Override
+            public boolean canScheduleTalk(Duration talkDuration) {
+                final Duration spareTime = timeAvailable().minus(talkDuration);
+                return isGreaterThan(spareTime,Duration.ofMinutes(0L));
+
+            }
+
+            @Override
+            public Duration addTimeConsumed(Duration talkDuration) {
+                return timeConsumed = timeConsumed.plus(talkDuration);
+            }
+
+            @Override
+            public Duration timeAvailable() {
+                return maxDuration().minus(timeConsumed);
             }
         };
 
@@ -41,100 +109,67 @@ class Track {
 
         public abstract LocalTime endsAt();
 
-        public boolean isValidEndTime(LocalTime endsOn) {
-            return (endsOn.isAfter(startsAt())) && (endsOn.isBefore(endsAt()));
-        }
+        public abstract Duration timeConsumed();
 
-        public boolean isValidStartTime(LocalTime startsOn) {
-            return (startsOn.isAfter(startsAt())) && (startsOn.isBefore(endsAt()));
-        }
+        public abstract boolean canScheduleTalk(Duration talkDuration);
+
+        public abstract Duration addTimeConsumed(Duration talkDuration);
+
+        public abstract Duration timeAvailable();
+
     }
 
-    final Set<Talk> talks = Sets.newHashSet();
+    final List<Talk> talks = new ArrayList<>();
 
     Track(String name) {
         this.name = name;
     }
 
-    Talk findTalk(String talkName) {
-        for (Talk talk : this.talks) {
-            if (talk.talkName.equals(talkName)) {
-                return talk;
+    /**
+     * @TODO Test
+     * @return
+     */
+
+    List<Talk> scheduleTalks(List<Talk> unscheduledTalks) {
+        Talk smallestTalk =unscheduledTalks.stream().min(Comparator.comparing(unscheduledTalk -> unscheduledTalk.talkDuration)).get();
+
+        for (Session session : Session.values()) {
+            while (session.canScheduleTalk(smallestTalk.talkDuration)){
+
+                final Optional<Talk> talkToSchedule = findTalkToSchedule(unscheduledTalks, session);
+
+                if(talkToSchedule.isPresent()){
+                    Talk talk = talkToSchedule.get();
+                    scheduleTalk(talk, session);
+                    unscheduledTalks.remove(talk);
+                    smallestTalk =unscheduledTalks.stream().min(Comparator.comparing(unscheduledTalk -> unscheduledTalk.talkDuration)).get();
+                }else{
+                    break;
+                }
             }
+
         }
-        throw new NoTalkFoundException();
+
+        return talks;
     }
 
-    boolean cancelTalk(String talkName) {
-        for (Talk talk : this.talks) {
-            if (talk.talkName.equals(talkName)) {
-                return this.talks.remove(talk);
-            }
-        }
-        return false;
+    /**
+     * @TODO Test
+     * @param unscheduledTalks
+     * @param session
+     * @return
+     */
+    Optional<Talk> findTalkToSchedule(List<Talk> unscheduledTalks, Session session) {
+        return unscheduledTalks.stream().filter(unscheduledTalk -> session.canScheduleTalk(unscheduledTalk.talkDuration))
+                            .max(Comparator.comparing(unscheduledTalk -> unscheduledTalk.talkDuration));
     }
 
-    void scheduleNetworkingEvent(LocalTime startsOn) {
-        checkRulesBeforeAddingNetworkingEvent(startsOn);
-    }
+    private void scheduleTalk(Talk talk, Session session) {
+        session.addTimeConsumed(talk.talkDuration);
+        final LocalTime startsOn = session.startsAt().plus(session.timeConsumed());
+        talk.schedule(startsOn);
+        talks.add(talk);
 
-    private void checkRulesBeforeAddingNetworkingEvent(LocalTime startsOn) {
-        checkNetworkingEventStartTime(startsOn);
-        checkTalkOverLapping(startsOn, Duration.standardHours(2L));
-    }
-
-    private void checkNetworkingEventStartTime(LocalTime startsOn) {
-        if (!Talk.isValidNetworkingEventStartTime(startsOn)) {
-            throw new InValidNetworkingEventTimingException();
-        }
-    }
-
-    void scheduleTalk(String talkName, Duration talkDuration, LocalTime startsOn) {
-        checkRulesBeforeAddingTalk(talkDuration, startsOn);
-        Talk talk = Talk.normalTalk(talkName, talkDuration, startsOn);
-        this.talks.add(talk);
-    }
-
-    void scheduleShortTalk(String talkName, LocalTime startsOn) {
-        checkRulesBeforeAddingTalk(Talk.SHORT_TALK_DURATION, startsOn);
-        Talk talk = Talk.shortTalk(talkName, startsOn);
-        this.talks.add(talk);
-    }
-
-    void checkRulesBeforeAddingTalk(Duration talkDuration, LocalTime startsOn) {
-        checkTalkStartTime(startsOn);
-        checkTalkEndTime(startsOn, talkDuration);
-        checkTalkOverLapping(startsOn, talkDuration);
-    }
-
-    private void checkTalkStartTime(LocalTime startsOn) {
-        if (!isValidTalkStartTime(startsOn)) {
-            throw new InValidTalkTimingsException();
-        }
-    }
-
-    private boolean isValidTalkStartTime(LocalTime startsOn) {
-        return (Session.MORNING.isValidStartTime(startsOn)) || (Session.NOON.isValidStartTime(startsOn));
-    }
-
-    private void checkTalkEndTime(LocalTime startsOn, Duration talkDuration) {
-        LocalTime endsOn = startsOn.plus(talkDuration.toStandardSeconds());
-        if (!isValidTalkEndTime(endsOn)) {
-            throw new InValidTalkTimingsException();
-        }
-    }
-
-    private boolean isValidTalkEndTime(LocalTime endsOn) {
-        return (Session.MORNING.isValidEndTime(endsOn)) || (Session.NOON.isValidEndTime(endsOn));
-    }
-
-    private void checkTalkOverLapping(LocalTime startsOn, Duration talkDuration) {
-        LocalTime proposedEndTimeOfTalk = startsOn.plus(talkDuration.toStandardSeconds());
-        for (Talk scheduledTalk : this.talks) {
-            if (scheduledTalk.isTalkOverlapping(startsOn, proposedEndTimeOfTalk)) {
-                throw new TalkTimingsOverlapException();
-            }
-        }
     }
 
     public class InValidNetworkingEventTimingException
@@ -143,18 +178,25 @@ class Track {
         }
     }
 
-    public class TalkTimingsOverlapException
-            extends RuntimeException {
-        public TalkTimingsOverlapException() {
-        }
+    public void scheduleNetworkingEvent() {
+
     }
 
-    public class InValidTalkTimingsException
-            extends RuntimeException {
-        public InValidTalkTimingsException() {
-        }
+    public void scheduleEmptyTalks() {
+
     }
 
-    public class NoTalkFoundException extends RuntimeException {
+
+    static boolean isGreaterThan(Duration left,Duration right){
+        return left.compareTo(right) > 0;
     }
+
+    static boolean isLesserThan(Duration left,Duration right){
+        return left.compareTo(right) < 0;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(isLesserThan(Duration.ofMinutes(1),Duration.ofMinutes(2)));
+    }
+
 }
