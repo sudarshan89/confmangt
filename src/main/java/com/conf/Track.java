@@ -12,6 +12,12 @@ class Track {
 
     final String name;
 
+    public void resetSessionTimeConsumed() {
+        for (Session session : Session.values()) {
+            session.resetTimeConsumed();
+        }
+    }
+
 
     public enum Session {
         MORNING {
@@ -45,7 +51,7 @@ class Track {
             @Override
             public boolean canScheduleTalk(Duration talkDuration) {
                 final Duration spareTime = timeAvailable().minus(talkDuration);
-                return spareTime.compareTo(Duration.ofMinutes(0L)) > 0;
+                return spareTime.compareTo(Duration.ofMinutes(0L)) >= 0;
 
             }
 
@@ -65,6 +71,11 @@ class Track {
                 Talk fillerTalk = new Talk(EMPTY_TALK, timeAvailable());
                 fillerTalk.schedule(startsOn);
                 return fillerTalk;
+            }
+
+            @Override
+            public void resetTimeConsumed() {
+                timeConsumed = Duration.ofMinutes(0L);
             }
 
         }, NOON {
@@ -124,13 +135,15 @@ class Track {
                 return networkingEvent;
             }
 
+            @Override
+            public void resetTimeConsumed() {
+                timeConsumed = Duration.ofMinutes(0L);
+            }
+
             private boolean isNetworkingSessionForOneHour(Duration fillerTalkDuration) {
                 return fillerTalkDuration.toMinutes() == 60;
             }
         };
-
-        private Session() {
-        }
 
         public abstract Duration maxDuration();
 
@@ -148,6 +161,8 @@ class Track {
 
         public abstract Talk scheduleFillerTalk();
 
+        public abstract void resetTimeConsumed();
+
     }
 
     final List<Talk> talks = new ArrayList<>();
@@ -157,10 +172,10 @@ class Track {
     }
 
     List<Talk> scheduleTalks(List<Talk> unscheduledTalks) {
-        Talk smallestTalk = unscheduledTalks.stream().min(Comparator.comparing(unscheduledTalk -> unscheduledTalk.talkDuration)).get();
+        Optional<Talk> smallestTalk = unscheduledTalks.stream().min(Comparator.comparing(unscheduledTalk -> unscheduledTalk.talkDuration));
 
         for (Session session : Session.values()) {
-            while (session.canScheduleTalk(smallestTalk.talkDuration)) {
+            while (smallestTalk.isPresent() && session.canScheduleTalk(smallestTalk.get().talkDuration)) {
 
                 final Optional<Talk> talkToSchedule = FindTalkToSchedule(unscheduledTalks, session);
 
@@ -168,7 +183,7 @@ class Track {
                     Talk talk = talkToSchedule.get();
                     scheduleTalk(talk, session);
                     unscheduledTalks.remove(talk);
-                    smallestTalk = unscheduledTalks.stream().min(Comparator.comparing(unscheduledTalk -> unscheduledTalk.talkDuration)).get();
+                    smallestTalk = unscheduledTalks.stream().min(Comparator.comparing(unscheduledTalk -> unscheduledTalk.talkDuration));
                 } else {
                     break;
                 }
@@ -196,16 +211,6 @@ class Track {
 
     }
 
-    public class InValidNetworkingEventTimingException
-            extends RuntimeException {
-        public InValidNetworkingEventTimingException() {
-        }
-    }
-
-    void scheduleNetworkingEvent() {
-
-    }
-
     void scheduleEmptyTalks() {
         for (Session session : Session.values()) {
             final Duration timeAvailableInSession = session.timeAvailable();
@@ -216,17 +221,17 @@ class Track {
         }
     }
 
-
     static boolean isGreaterThan(Duration left, Duration right) {
         return left.compareTo(right) > 0;
     }
 
-    static boolean isLesserThan(Duration left, Duration right) {
-        return left.compareTo(right) < 0;
+    @Override
+    public String toString() {
+        String talksToString="";
+        talks.sort((p1, p2) -> p1.startsOn.compareTo(p2.startsOn));
+        for (Talk talk : talks) {
+            talksToString = talksToString + talk.toString() + "\n";
+        }
+        return name + "\n" + talksToString;
     }
-
-    public static void main(String[] args) {
-        System.out.println(isLesserThan(Duration.ofMinutes(1), Duration.ofMinutes(2)));
-    }
-
 }

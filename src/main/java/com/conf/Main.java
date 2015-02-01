@@ -3,6 +3,7 @@ package com.conf;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Scanner;
 import java.util.stream.Stream;
 
@@ -24,12 +25,12 @@ public class Main {
             System.out.println("Too bad invalid input, lets go with 2 tracks");
         }
         System.out.println(numberOfTracks);
-        final Stream<String> lines = readFile(fileName);
+        final List<String> lines = readFile(fileName);
         Conference.Kickstart(lines,numberOfTracks);
     }
 
-    private static Stream<String> readFile(String fileName) throws IOException {
-        return Files.lines(Paths.get(fileName));
+    private static List<String> readFile(String fileName) throws IOException {
+        return Files.readAllLines(Paths.get(fileName));
 
     }
 }

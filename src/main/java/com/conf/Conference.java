@@ -41,26 +41,18 @@ public class Conference {
         this.tracks.add(new Track(name));
     }
 
-    public void scheduleTalk(String trackName, String talkName, Duration talkDuration, LocalTime startsOn) {
-    }
-
-    public void scheduleNetworkingEvent(String trackName, LocalTime startsOn) {
-
-    }
-
     private void scheduleTalks(List<Talk> unscheduledTalks) {
             for (Track track : tracks) {
                 final List<Talk> talksScheduledInThisTrack = track.scheduleTalks(unscheduledTalks);
-                unscheduledTalks.removeAll(talksScheduledInThisTrack);
                 track.scheduleEmptyTalks();
-                track.scheduleNetworkingEvent();
+                track.resetSessionTimeConsumed();
+                System.out.println(track.toString());
             }
-        unscheduledTalks.forEach(System.out::println);
 
     }
 
-    public static void Kickstart(Stream<String> lines, int numberOfTracks) {
-        final List<Talk> unscheduledTalks = MapStringsIntoTalks(lines);
+    public static void Kickstart(List<String> lines, int numberOfTracks) {
+        final List<Talk> unscheduledTalks = MapStringsIntoTalks(lines.stream().sorted());
         Conference conference = Conference.Plan(CONFERENCE_NAME, numberOfTracks);
         conference.scheduleTalks(unscheduledTalks);
 
@@ -80,7 +72,6 @@ public class Conference {
                 return Talk.normalTalk(talkName, Duration.ofMinutes(Long.valueOf(minutes)));
             } else if (duration.endsWith("lightning")) {
                 return Talk.shortTalk(talkName);
-
             } else {
                 throw new InvalidTalkNameException("Invalid talk name in file " + line);
             }

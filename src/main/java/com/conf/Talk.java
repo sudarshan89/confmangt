@@ -8,7 +8,7 @@ class Talk {
     static final Duration SHORT_TALK_DURATION = Duration.ofMinutes(5L);
     String talkName;
     Duration talkDuration;
-    private LocalTime startsOn;
+    LocalTime startsOn;
     LocalTime endsOn;
 
     static Talk normalTalk(String talkName, Duration talkDuration) {
@@ -43,6 +43,10 @@ class Talk {
         return true;
     }
 
+    public LocalTime getStartsOn() {
+        return LocalTime.from(startsOn);
+    }
+
     public int hashCode() {
         return this.talkName != null ? this.talkName.hashCode() : 0;
     }
@@ -53,6 +57,6 @@ class Talk {
 
     @Override
     public String toString() {
-        return talkName;
+        return startsOn +" "+ talkName + " " +talkDuration.toMinutes() + "min";
     }
 }
