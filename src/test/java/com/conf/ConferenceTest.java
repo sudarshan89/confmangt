@@ -30,7 +30,6 @@ public class ConferenceTest {
         assertThat(this.conferenceWithThreeTracksCapacity.noOfTracks(), is(Integer.valueOf(3)));
     }
 
-    /*************************************************************************************************************************************************************************************/
 
     @Test
     public void givenALineWithNormalTalk_whenCreatingAUnscheduledTalk_itShouldCreateTalkWithCorrectName(){
@@ -68,7 +67,7 @@ public class ConferenceTest {
     public void givenAListOfTalks_whenFindingTheTalkToScheduleInSession_itShouldReturnTalkWhoseDurationMatchesClosestWithTimeRemainingInSession(){
         Talk talk1 = Talk.normalTalk("Talk 1",Duration.ofMinutes(15L));
         Talk talk2 = Talk.normalTalk("Talk 2",Duration.ofMinutes(35L));
-        Talk talk3 = Talk.normalTalk("Talk 3",Duration.ofMinutes(45L));
+        Talk talk3 = Talk.normalTalk("Talk 3",Duration.ofMinutes(44L));
         Talk talk4 = Talk.normalTalk("Talk 3",Duration.ofMinutes(4500L));
 
         List<Talk> unscheduledTalks = new ArrayList();
@@ -78,16 +77,18 @@ public class ConferenceTest {
         unscheduledTalks.add(talk4);
 
         final Optional<Talk> talk = Track.FindTalkToSchedule(unscheduledTalks, Track.Session.MORNING);
-        assertThat(talk.get().talkDuration,is(equalTo(talk3.talkDuration)));
+        assertThat(talk.get().talkDuration,is(equalTo(talk1.talkDuration)));
     }
 
     @Test
     public void givenAListOfTalks_whenSchedulingTalksInATrack_itShouldReturnAllTheScheduledTalks(){
-        Talk talk1 = Talk.normalTalk("Talk 1",Duration.ofMinutes(140L));
-        Talk talk2 = Talk.normalTalk("Talk 2",Duration.ofMinutes(30L));
-        Talk talk3 = Talk.normalTalk("Talk 3",Duration.ofMinutes(200L));
-        Talk talk4 = Talk.normalTalk("Talk 4",Duration.ofMinutes(20L));
-        Talk talk5 = Talk.normalTalk("Invalid talk",Duration.ofMinutes(300L));
+        Talk talk1 = Talk.normalTalk("Talk 1",Duration.ofMinutes(50L));
+        Talk talk2 = Talk.normalTalk("Talk 2",Duration.ofMinutes(50L));
+        Talk talk3 = Talk.normalTalk("Talk 3",Duration.ofMinutes(50L));
+        Talk talk4 = Talk.normalTalk("Talk 4",Duration.ofMinutes(25L));
+        Talk talk5 = Talk.normalTalk("Talk 5",Duration.ofMinutes(20L));
+        Talk talk6 = Talk.normalTalk("Talk 6",Duration.ofMinutes(10L));
+        Talk invalidTalk = Talk.normalTalk("Invalid talk",Duration.ofMinutes(300L));
 
         List<Talk> unscheduledTalks = new ArrayList();
         unscheduledTalks.add(talk1);
@@ -95,26 +96,22 @@ public class ConferenceTest {
         unscheduledTalks.add(talk3);
         unscheduledTalks.add(talk4);
         unscheduledTalks.add(talk5);
+        unscheduledTalks.add(talk6);
+        unscheduledTalks.add(invalidTalk);
 
         Track track = new Track("Track 1");
         final List<Talk> talks = track.scheduleTalks(unscheduledTalks);
 
-        assertThat(talks.size(),is(4));
-        assertThat(talks.get(0).endsOn, equalTo(LocalTime.of(11,20)));
-        assertThat(talks.get(1).endsOn, equalTo(LocalTime.of(11,50)));
-        assertThat(talks.get(2).endsOn, equalTo(LocalTime.of(16,20)));
-        assertThat(talks.get(3).endsOn, equalTo(LocalTime.of(16,40)));
+        assertThat(talks.size(),is(7));
+        assertThat(talks.get(0).endsOn, equalTo(LocalTime.of(9,20)));
+        assertThat(talks.get(1).endsOn, equalTo(LocalTime.of(9,30)));
+        assertThat(talks.get(2).endsOn, equalTo(LocalTime.of(10,20)));
+        assertThat(talks.get(3).endsOn, equalTo(LocalTime.of(11,10)));
+        assertThat(talks.get(4).endsOn, equalTo(LocalTime.of(12,00)));
+        assertThat(talks.get(5).endsOn, equalTo(LocalTime.of(13,25)));
 
 
 
     }
-
-    /*************************************************************************************************************************************************************************************/
-    /**
-     * @TODO
-     */
-
-
-
 
 }

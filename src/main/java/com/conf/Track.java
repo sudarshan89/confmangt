@@ -9,6 +9,7 @@ class Track {
 
     public static final String NETWORKING_SESSION = "Networking Session";
     public static final String EMPTY_TALK = "EMPTY TALK";
+    private static final Talk LUNCH = Talk.lunch();
 
     final String name;
 
@@ -189,6 +190,7 @@ class Track {
                 }
             }
         }
+        talks.add(LUNCH);
         return talks;
     }
 
@@ -196,11 +198,12 @@ class Track {
      * @param unscheduledTalks
      * @param session
      * @return
-     * @TODO Test
+     * It will pick the talk which can fit into the available time in the session amongst all the candidate talks it will pick the talk where (available time % talk duration) is smallest and if there are multiple talks
+     * with the same value, then it will pick the talk with highest duration
      */
     static Optional<Talk> FindTalkToSchedule(List<Talk> unscheduledTalks, Session session) {
         return unscheduledTalks.stream().filter(unscheduledTalk -> session.canScheduleTalk(unscheduledTalk.talkDuration))
-                .max(Comparator.comparing(unscheduledTalk -> unscheduledTalk.talkDuration));
+                .max(Comparator.comparing((Talk unscheduledTalk) -> session.timeAvailable().toMinutes() % unscheduledTalk.talkDuration.toMinutes()).reversed().thenComparing((Talk unscheduledTalk)-> unscheduledTalk.talkDuration));
     }
 
     private void scheduleTalk(Talk talk, Session session) {
