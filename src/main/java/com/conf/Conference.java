@@ -1,12 +1,18 @@
 package com.conf;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
-import org.joda.time.Duration;
-import org.joda.time.LocalTime;
+import static java.util.stream.Collectors.toList;
 
+
+/**
+ * Lets move to lambdas
+ */
 public class Conference {
+    public static final String CONFERENCE_NAME = "ThoughWorks Conference";
     private Integer noOfTracks;
     private final String name;
     private List<Track> tracks;
@@ -19,6 +25,10 @@ public class Conference {
 
     public static Conference Plan(String name, int noOfTracks) {
         Conference conference = new Conference(name, noOfTracks);
+        for (int i = 1; i <= noOfTracks; i++) {
+            conference.addTrack("Track " + i + " : ");
+
+        }
         return conference;
     }
 
@@ -26,53 +36,52 @@ public class Conference {
         return this.noOfTracks;
     }
 
-    public boolean addTrack(String name) {
-        if (this.tracks.size() < noOfTracks().intValue()) {
-            return this.tracks.add(new Track(name));
-        }
-        return false;
+    void addTrack(String name) {
+        this.tracks.add(new Track(name));
     }
 
-    public void scheduleTalk(String trackName, String talkName, Duration talkDuration, LocalTime startsOn) {
-        Track track = findTrack(trackName);
-        track.scheduleTalk(talkName, talkDuration, startsOn);
-    }
-
-    public void scheduleShortTalk(String trackName, String talkName, LocalTime startsOn) {
-        Track track = findTrack(trackName);
-        track.scheduleShortTalk(talkName, startsOn);
-    }
-
-    public void scheduleNetworkingEvent(String trackName, LocalTime startsOn) {
-        Track track = findTrack(trackName);
-        track.scheduleNetworkingEvent(startsOn);
-    }
-
-    public void rescheduleTalk(String trackName, String talkName, LocalTime startsOn) {
-        Track track = findTrack(trackName);
-        Talk rescheduledTalk = track.findTalk(talkName);
-        track.cancelTalk(talkName);
-        if (rescheduledTalk.isShortTalk()) {
-            scheduleShortTalk(trackName, talkName, startsOn);
-        } else {
-            scheduleTalk(trackName, talkName, rescheduledTalk.talkDuration, startsOn);
-        }
-    }
-
-    Track findTrack(String trackName) {
-        for (Track track : this.tracks) {
-            if (track.name.equals(trackName)) {
-                return track;
+    private void scheduleTalks(List<Talk> unscheduledTalks) {
+            for (Track track : tracks) {
+                track.scheduleTalks(unscheduledTalks);
+                track.scheduleEmptyTalks();
+                track.resetSessionTimeConsumed();
+                System.out.println(track.toString());
             }
+
+    }
+
+    public static void Kickstart(List<String> lines, int numberOfTracks) {
+        final List<Talk> unscheduledTalks = MapStringsIntoTalks(lines.stream().sorted());
+        Conference conference = Conference.Plan(CONFERENCE_NAME, numberOfTracks);
+        conference.scheduleTalks(unscheduledTalks);
+
+    }
+
+    static List<Talk> MapStringsIntoTalks(Stream<String> lines) {
+        return lines.map(line -> {
+            String trimmedLine = line.trim();
+            int lastSpaceIndex = line.lastIndexOf(" ");
+            if (lastSpaceIndex == -1)
+                throw new InvalidTalkNameException("Invalid talk name in file " + line);
+
+            String talkName = trimmedLine.substring(0, lastSpaceIndex);
+            String duration = trimmedLine.substring(lastSpaceIndex + 1);
+            if (duration.endsWith("min")) {
+                String minutes = duration.replaceFirst("min", "");
+                return Talk.normalTalk(talkName, Duration.ofMinutes(Long.valueOf(minutes)));
+            } else if (duration.endsWith("lightning")) {
+                return Talk.shortTalk(talkName);
+            } else {
+                throw new InvalidTalkNameException("Invalid talk name in file " + line);
+            }
+        }).collect(toList());
+
+    }
+
+    private static class InvalidTalkNameException extends RuntimeException {
+        public InvalidTalkNameException(String description) {
+            super(description);
         }
-        throw new NoTrackFoundException();
     }
 
-    public boolean cancelTalk(String trackName, String talkName) {
-        Track track = findTrack(trackName);
-        return track.cancelTalk(talkName);
-    }
-
-    public class NoTrackFoundException extends RuntimeException {
-    }
 }

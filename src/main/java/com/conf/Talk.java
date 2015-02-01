@@ -1,72 +1,64 @@
 package com.conf;
 
-import org.joda.time.Duration;
-import org.joda.time.LocalTime;
 
-class Talk
-{
-  static final Duration SHORT_TALK_DURATION = Duration.standardMinutes(5L);
-  String talkName;
-  Duration talkDuration;
-  private LocalTime startsOn;
-  LocalTime endsOn;
+import java.time.Duration;
+import java.time.LocalTime;
 
-  static Talk normalTalk(String talkName, Duration talkDuration, LocalTime startsOn)
-  {
-    return new Talk(talkName, talkDuration, startsOn);
-  }
+class Talk {
+    static final Duration SHORT_TALK_DURATION = Duration.ofMinutes(5L);
+    String talkName;
+    Duration talkDuration;
+    LocalTime startsOn;
+    LocalTime endsOn;
 
-  static Talk shortTalk(String talkName, LocalTime startsOn)
-  {
-    return new Talk(talkName, SHORT_TALK_DURATION, startsOn);
-  }
-
-  Talk(String talkName, Duration talkDuration, LocalTime startsOn)
-  {
-    this.talkName = talkName;
-    this.talkDuration = talkDuration;
-    this.startsOn = startsOn;
-    this.endsOn = startsOn.plus(talkDuration.toStandardSeconds());
-  }
-
-  public boolean isTalkOverlapping(LocalTime proposedStartTimeOfTalk, LocalTime proposedEndsTimeOfTalk)
-  {
-    return ((proposedStartTimeOfTalk.isAfter(this.startsOn)) && (proposedStartTimeOfTalk.isBefore(this.endsOn))) || ((proposedStartTimeOfTalk.isBefore(this.startsOn)) && (proposedEndsTimeOfTalk.isAfter(this.startsOn)));
-  }
-
-  public boolean isShortTalk()
-  {
-    return this.talkDuration.equals(SHORT_TALK_DURATION);
-  }
-
-  public boolean equals(Object o)
-  {
-    if (this == o) {
-      return true;
+    static Talk normalTalk(String talkName, Duration talkDuration) {
+        return new Talk(talkName, talkDuration);
     }
-    if ((o == null) || (getClass() != o.getClass())) {
-      return false;
-    }
-    Talk talk = (Talk)o;
-    if (this.talkName != null ? !this.talkName.equals(talk.talkName) : talk.talkName != null) {
-      return false;
-    }
-    return true;
-  }
 
-  public int hashCode()
-  {
-    return this.talkName != null ? this.talkName.hashCode() : 0;
-  }
+    static Talk shortTalk(String talkName) {
+        return new Talk(talkName, SHORT_TALK_DURATION);
+    }
 
-  static boolean isValidNetworkingEventStartTime(LocalTime startsOn)
-  {
-    return (startsOn.isAfter(LocalTime.parse("T16:00:00"))) && (startsOn.isBefore(LocalTime.parse("T17:00:00")));
-  }
+    static Talk lunch() {
+        final Talk lunch = new Talk("Lunch", Duration.ofHours(1L));
+        lunch.schedule(LocalTime.of(12,00));
+        return lunch;
+    }
+
+    Talk(String talkName, Duration talkDuration) {
+        this.talkName = talkName;
+        this.talkDuration = talkDuration;
+    }
+
+    public void schedule(LocalTime startsOn) {
+        this.startsOn = startsOn;
+        this.endsOn = startsOn.plus(talkDuration);
+    }
+
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if ((o == null) || (getClass() != o.getClass())) {
+            return false;
+        }
+        Talk talk = (Talk) o;
+        if (this.talkName != null ? !this.talkName.equals(talk.talkName) : talk.talkName != null) {
+            return false;
+        }
+        return true;
+    }
+
+    public LocalTime getStartsOn() {
+        return LocalTime.from(startsOn);
+    }
+
+    public int hashCode() {
+        return this.talkName != null ? this.talkName.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return startsOn +" "+ talkName + " " +talkDuration.toMinutes() + "min";
+    }
 }
-
-
-/* Location:           F:\codebases\codekata\confmangt\target\classes\
- * Qualified Name:     com.conf.Talk
- * JD-Core Version:    0.7.0.1
- */
