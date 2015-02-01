@@ -1,7 +1,6 @@
 package com.conf;
 
 import java.time.Duration;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -26,7 +25,7 @@ public class Conference {
 
     public static Conference Plan(String name, int noOfTracks) {
         Conference conference = new Conference(name, noOfTracks);
-        for (int i = 0; i < noOfTracks; i++) {
+        for (int i = 1; i <= noOfTracks; i++) {
             conference.addTrack("Track " + i + " : ");
 
         }
@@ -43,7 +42,7 @@ public class Conference {
 
     private void scheduleTalks(List<Talk> unscheduledTalks) {
             for (Track track : tracks) {
-                final List<Talk> talksScheduledInThisTrack = track.scheduleTalks(unscheduledTalks);
+                track.scheduleTalks(unscheduledTalks);
                 track.scheduleEmptyTalks();
                 track.resetSessionTimeConsumed();
                 System.out.println(track.toString());
@@ -85,7 +84,4 @@ public class Conference {
         }
     }
 
-
-    public class NoTrackFoundException extends RuntimeException {
-    }
 }

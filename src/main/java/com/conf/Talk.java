@@ -19,6 +19,12 @@ class Talk {
         return new Talk(talkName, SHORT_TALK_DURATION);
     }
 
+    static Talk lunch() {
+        final Talk lunch = new Talk("Lunch", Duration.ofHours(1L));
+        lunch.schedule(LocalTime.of(12,00));
+        return lunch;
+    }
+
     Talk(String talkName, Duration talkDuration) {
         this.talkName = talkName;
         this.talkDuration = talkDuration;
@@ -49,10 +55,6 @@ class Talk {
 
     public int hashCode() {
         return this.talkName != null ? this.talkName.hashCode() : 0;
-    }
-
-    static boolean isValidNetworkingEventStartTime(LocalTime startsOn) {
-        return (startsOn.isAfter(LocalTime.parse("T16:00:00"))) && (startsOn.isBefore(LocalTime.parse("T17:00:00")));
     }
 
     @Override
