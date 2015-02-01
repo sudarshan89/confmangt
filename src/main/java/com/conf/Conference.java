@@ -25,7 +25,7 @@ public class Conference {
 
     public static Conference Plan(String name, int noOfTracks) {
         Conference conference = new Conference(name, noOfTracks);
-        for (int i = 0; i < noOfTracks; i++) {
+        for (int i = 1; i <= noOfTracks; i++) {
             conference.addTrack("Track " + i + " : ");
 
         }

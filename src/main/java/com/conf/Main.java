@@ -15,7 +15,8 @@ public class Main {
     public static void main(String[] args) throws IOException {
         int numberOfTracks = 2;
         String fileName = args.length==1?args[0]:"demo.txt";
-        System.out.println(fileName);
+        System.out.println("If you want to specify a custom input file java -jar confmangt.jar mypath\\myfile.txt");
+        System.out.println("Input file processed is " + fileName);
         System.out.println("Enter the number of tracks in Conference (Will assume 2 tracks if input is invalid :) : ");
         Scanner sc = new Scanner(System.in);
         try{
