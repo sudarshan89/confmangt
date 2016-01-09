@@ -78,9 +78,7 @@ public class ConferenceTest {
         unscheduledTalks.add(talk4);
         unscheduledTalks.add(talk5);
 
-        final Track track = new Track("Test Track");
-
-        Track.Session morning = track.new Session(LocalTime.parse("09:00:00"),LocalTime.parse("12:00:00"),Duration.ofMinutes(180L));
+        Session morning = Session.MorningSession(LocalTime.parse("09:00:00"),LocalTime.parse("12:00:00"),Duration.ofMinutes(180L));
         //private final Session afternoon = new Session(LocalTime.parse("13:00:00"),LocalTime.parse("17:00:00"),Duration.ofMinutes(180L),Duration.ofMinutes(240L));
 
 

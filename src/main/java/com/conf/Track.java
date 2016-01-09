@@ -10,60 +10,17 @@ import static java.util.Arrays.asList;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.comparingLong;
 
+/**
+ * @TODO fillerTalk related logic needs to move into a enum which should be put into the Session inner class
+ */
 class Track {
 
-    public static final String NETWORKING_SESSION = "Networking Session";
-    public static final String EMPTY_TALK = "EMPTY TALK";
     private static final Talk LUNCH = Talk.lunch();
 
     final String name;
 
-    private final Session morning = new Session(LocalTime.parse("09:00:00"),LocalTime.parse("12:00:00"),Duration.ofMinutes(180L));
-    private final Session afternoon = new Session(LocalTime.parse("13:00:00"),LocalTime.parse("17:00:00"),Duration.ofMinutes(180L),Duration.ofMinutes(240L));
-
-    class Session {
-
-        private Duration timeConsumed = Duration.ofMinutes(0L);
-        final LocalTime startsAt;
-        final LocalTime endsAt;
-        final Duration maxDuration;
-        final Duration minDuration;
-
-
-        public Session(LocalTime startsAt, LocalTime endsAt, Duration minDuration, Duration maxDuration) {
-            this.startsAt = startsAt;
-            this.endsAt = endsAt;
-            this.minDuration = minDuration;
-            this.maxDuration = maxDuration;
-        }
-
-        public Session(LocalTime startsAt, LocalTime endsAt, Duration maxDuration) {
-            this.startsAt = startsAt;
-            this.endsAt = endsAt;
-            this.maxDuration = maxDuration;
-            this.minDuration = Duration.from(maxDuration);
-        }
-
-        public Duration addTimeConsumed(Duration talkDuration) {
-            return timeConsumed = timeConsumed.plus(talkDuration);
-        }
-
-        public Duration timeAvailable() {
-            return maxDuration.minus(timeConsumed);
-        }
-
-        public boolean canScheduleTalk(Duration talkDuration) {
-            final Duration spareTime = timeAvailable().minus(talkDuration);
-            return spareTime.compareTo(Duration.ofMinutes(0L)) >= 0;
-        }
-
-        public Talk scheduleFillerTalk() {
-            LocalTime startsOn = startsAt.plusMinutes(timeConsumed.toMinutes());
-            Talk fillerTalk = new Talk(EMPTY_TALK, timeAvailable());
-            fillerTalk.schedule(startsOn);
-            return fillerTalk;
-        }
-    }
+    private final Session morning = Session.MorningSession(LocalTime.parse("09:00:00"),LocalTime.parse("12:00:00"), Duration.ofMinutes(180L));
+    private final Session afternoon = Session.NoonSession(LocalTime.parse("13:00:00"),LocalTime.parse("17:00:00"),Duration.ofMinutes(180L),Duration.ofMinutes(240L));
 
     private Collection<Session> allSessions(){
         return asList(morning,afternoon);
@@ -115,7 +72,7 @@ class Track {
     }
 
     private void scheduleTalk(Talk talk, Session session) {
-        final LocalTime startsOn = session.startsAt.plusMinutes(session.timeConsumed.toMinutes());
+        final LocalTime startsOn = session.startsAt.plusMinutes(session.getTimeConsumed().toMinutes());
         session.addTimeConsumed(talk.talkDuration);
         talk.schedule(startsOn);
         talks.add(talk);
