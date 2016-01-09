@@ -4,6 +4,11 @@ package com.conf;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.stream.Stream;
+
+import static java.util.Arrays.asList;
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.comparingLong;
 
 class Track {
 
@@ -13,158 +18,57 @@ class Track {
 
     final String name;
 
-    public void resetSessionTimeConsumed() {
-        for (Session session : Session.values()) {
-            session.resetTimeConsumed();
+    private final Session morning = new Session(LocalTime.parse("09:00:00"),LocalTime.parse("12:00:00"),Duration.ofMinutes(180L));
+    private final Session afternoon = new Session(LocalTime.parse("13:00:00"),LocalTime.parse("17:00:00"),Duration.ofMinutes(180L),Duration.ofMinutes(240L));
+
+    class Session {
+
+        private Duration timeConsumed = Duration.ofMinutes(0L);
+        final LocalTime startsAt;
+        final LocalTime endsAt;
+        final Duration maxDuration;
+        final Duration minDuration;
+
+
+        public Session(LocalTime startsAt, LocalTime endsAt, Duration minDuration, Duration maxDuration) {
+            this.startsAt = startsAt;
+            this.endsAt = endsAt;
+            this.minDuration = minDuration;
+            this.maxDuration = maxDuration;
+        }
+
+        public Session(LocalTime startsAt, LocalTime endsAt, Duration maxDuration) {
+            this.startsAt = startsAt;
+            this.endsAt = endsAt;
+            this.maxDuration = maxDuration;
+            this.minDuration = Duration.from(maxDuration);
+        }
+
+        public Duration addTimeConsumed(Duration talkDuration) {
+            return timeConsumed = timeConsumed.plus(talkDuration);
+        }
+
+        public Duration timeAvailable() {
+            return maxDuration.minus(timeConsumed);
+        }
+
+        public boolean canScheduleTalk(Duration talkDuration) {
+            final Duration spareTime = timeAvailable().minus(talkDuration);
+            return spareTime.compareTo(Duration.ofMinutes(0L)) >= 0;
+        }
+
+        public Talk scheduleFillerTalk() {
+            LocalTime startsOn = startsAt.plusMinutes(timeConsumed.toMinutes());
+            Talk fillerTalk = new Talk(EMPTY_TALK, timeAvailable());
+            fillerTalk.schedule(startsOn);
+            return fillerTalk;
         }
     }
 
-
-    public enum Session {
-        MORNING {
-
-            private Duration timeConsumed = Duration.ofMinutes(0L);
-
-            @Override
-            public LocalTime startsAt() {
-                return LocalTime.parse("09:00:00");
-            }
-
-            @Override
-            public LocalTime endsAt() {
-                return LocalTime.parse("12:00:00");
-            }
-
-            @Override
-            public Duration timeConsumed() {
-                return timeConsumed;
-            }
-
-            @Override
-            public Duration maxDuration() {
-                return Duration.ofMinutes(180L);
-            }
-
-            public Duration minDuration() {
-                return Duration.ofMinutes(180L);
-            }
-
-            @Override
-            public boolean canScheduleTalk(Duration talkDuration) {
-                final Duration spareTime = timeAvailable().minus(talkDuration);
-                return spareTime.compareTo(Duration.ofMinutes(0L)) >= 0;
-
-            }
-
-            @Override
-            public Duration addTimeConsumed(Duration talkDuration) {
-                return timeConsumed = timeConsumed.plus(talkDuration);
-            }
-
-            @Override
-            public Duration timeAvailable() {
-                return maxDuration().minus(timeConsumed);
-            }
-
-            @Override
-            public Talk scheduleFillerTalk() {
-                LocalTime startsOn = startsAt().plusMinutes(timeConsumed().toMinutes());
-                Talk fillerTalk = new Talk(EMPTY_TALK, timeAvailable());
-                fillerTalk.schedule(startsOn);
-                return fillerTalk;
-            }
-
-            @Override
-            public void resetTimeConsumed() {
-                timeConsumed = Duration.ofMinutes(0L);
-            }
-
-        }, NOON {
-            private Duration timeConsumed = Duration.ofMinutes(0L);
-
-            @Override
-            public LocalTime startsAt() {
-                return LocalTime.parse("13:00:00");
-            }
-
-            @Override
-            public LocalTime endsAt() {
-                return LocalTime.parse("17:00:00");
-            }
-
-            @Override
-            public Duration timeConsumed() {
-                return timeConsumed;
-            }
-
-            @Override
-            public Duration maxDuration() {
-                return Duration.ofMinutes(240L);
-            }
-
-            public Duration minDuration() {
-                return Duration.ofMinutes(180L);
-            }
-
-            @Override
-            public boolean canScheduleTalk(Duration talkDuration) {
-                final Duration spareTime = timeAvailable().minus(talkDuration);
-                return isGreaterThan(spareTime, Duration.ofMinutes(0L));
-
-            }
-
-            @Override
-            public Duration addTimeConsumed(Duration talkDuration) {
-                return timeConsumed = timeConsumed.plus(talkDuration);
-            }
-
-            @Override
-            public Duration timeAvailable() {
-                return maxDuration().minus(timeConsumed);
-            }
-
-            @Override
-            public Talk scheduleFillerTalk() {
-                LocalTime startsOn = startsAt().plusMinutes(timeConsumed().toMinutes());
-                Duration fillerTalkDuration = Duration.ofMinutes(Math.min(Duration.ofHours(1L).toMinutes(), timeAvailable().toMinutes()));
-                Talk networkingEvent = new Talk(NETWORKING_SESSION, fillerTalkDuration);
-                if (isNetworkingSessionForOneHour(fillerTalkDuration)) {
-                    networkingEvent.schedule(LocalTime.of(16, 0));
-                } else {
-                    networkingEvent.schedule(startsOn);
-                }
-                return networkingEvent;
-            }
-
-            @Override
-            public void resetTimeConsumed() {
-                timeConsumed = Duration.ofMinutes(0L);
-            }
-
-            private boolean isNetworkingSessionForOneHour(Duration fillerTalkDuration) {
-                return fillerTalkDuration.toMinutes() == 60;
-            }
-        };
-
-        public abstract Duration maxDuration();
-
-        public abstract LocalTime startsAt();
-
-        public abstract LocalTime endsAt();
-
-        public abstract Duration timeConsumed();
-
-        public abstract boolean canScheduleTalk(Duration talkDuration);
-
-        public abstract Duration addTimeConsumed(Duration talkDuration);
-
-        public abstract Duration timeAvailable();
-
-        public abstract Talk scheduleFillerTalk();
-
-        public abstract void resetTimeConsumed();
-
+    private Collection<Session> allSessions(){
+        return asList(morning,afternoon);
     }
+
 
     final List<Talk> talks = new ArrayList<>();
 
@@ -173,9 +77,9 @@ class Track {
     }
 
     List<Talk> scheduleTalks(List<Talk> unscheduledTalks) {
-        Optional<Talk> smallestTalk = unscheduledTalks.stream().min(Comparator.comparing(unscheduledTalk -> unscheduledTalk.talkDuration));
+        Optional<Talk> smallestTalk = unscheduledTalks.stream().min(comparing(unscheduledTalk -> unscheduledTalk.talkDuration));
 
-        for (Session session : Session.values()) {
+        for (Session session : allSessions()) {
             while (smallestTalk.isPresent() && session.canScheduleTalk(smallestTalk.get().talkDuration)) {
 
                 final Optional<Talk> talkToSchedule = FindTalkToSchedule(unscheduledTalks, session);
@@ -184,7 +88,7 @@ class Track {
                     Talk talk = talkToSchedule.get();
                     scheduleTalk(talk, session);
                     unscheduledTalks.remove(talk);
-                    smallestTalk = unscheduledTalks.stream().min(Comparator.comparing(unscheduledTalk -> unscheduledTalk.talkDuration));
+                    smallestTalk = unscheduledTalks.stream().min(comparing(unscheduledTalk -> unscheduledTalk.talkDuration));
                 } else {
                     break;
                 }
@@ -197,17 +101,21 @@ class Track {
     /**
      * @param unscheduledTalks
      * @param session
-     * @return
-     * It will pick the talk which can fit into the available time in the session amongst all the candidate talks it will pick the talk where (available time % talk duration) is smallest and if there are multiple talks
+     * @return It will pick the talk which can fit into the available time in the session amongst all the candidate talks it will pick
+     * the talk where (available time % talk duration) is smallest and if there are multiple talks
      * with the same value, then it will pick the talk with highest duration
      */
     static Optional<Talk> FindTalkToSchedule(List<Talk> unscheduledTalks, Session session) {
-        return unscheduledTalks.stream().filter(unscheduledTalk -> session.canScheduleTalk(unscheduledTalk.talkDuration))
-                .max(Comparator.comparing((Talk unscheduledTalk) -> session.timeAvailable().toMinutes() % unscheduledTalk.talkDuration.toMinutes()).reversed().thenComparing((Talk unscheduledTalk)-> unscheduledTalk.talkDuration));
+        final Stream<Talk> eligibleTalks = unscheduledTalks.stream().filter(unscheduledTalk -> session.canScheduleTalk(unscheduledTalk.talkDuration));
+        final Comparator<Talk> byAscendingSessionAvailableTimeModuloTalkDuration = comparing(
+                (Talk unscheduledTalk) -> session.timeAvailable().toMinutes() % unscheduledTalk.talkDuration.toMinutes());
+        final Comparator<Talk> byDescendingTalkByDuration = comparingLong((Talk unscheduledTalk) -> unscheduledTalk.talkDuration.toMinutes()).reversed();
+        final Comparator<Talk> talkComparator = byAscendingSessionAvailableTimeModuloTalkDuration.thenComparing(byDescendingTalkByDuration);
+        return eligibleTalks.min(talkComparator);
     }
 
     private void scheduleTalk(Talk talk, Session session) {
-        final LocalTime startsOn = session.startsAt().plusMinutes(session.timeConsumed().toMinutes());
+        final LocalTime startsOn = session.startsAt.plusMinutes(session.timeConsumed.toMinutes());
         session.addTimeConsumed(talk.talkDuration);
         talk.schedule(startsOn);
         talks.add(talk);
@@ -215,7 +123,7 @@ class Track {
     }
 
     void scheduleEmptyTalks() {
-        for (Session session : Session.values()) {
+        for (Session session : allSessions()) {
             final Duration timeAvailableInSession = session.timeAvailable();
             if (isGreaterThan(timeAvailableInSession, Duration.ofMinutes(0L))) {
                 final Talk fillerTalk = session.scheduleFillerTalk();
@@ -230,11 +138,12 @@ class Track {
 
     @Override
     public String toString() {
-        String talksToString="";
+        String talksToString = "";
         talks.sort((p1, p2) -> p1.startsOn.compareTo(p2.startsOn));
         for (Talk talk : talks) {
             talksToString = talksToString + talk.toString() + "\n";
         }
         return name + "\n" + talksToString;
     }
+
 }

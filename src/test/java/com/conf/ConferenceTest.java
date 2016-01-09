@@ -68,16 +68,24 @@ public class ConferenceTest {
         Talk talk1 = Talk.normalTalk("Talk 1",Duration.ofMinutes(15L));
         Talk talk2 = Talk.normalTalk("Talk 2",Duration.ofMinutes(35L));
         Talk talk3 = Talk.normalTalk("Talk 3",Duration.ofMinutes(44L));
-        Talk talk4 = Talk.normalTalk("Talk 3",Duration.ofMinutes(4500L));
+        Talk talk4 = Talk.normalTalk("Talk 4",Duration.ofMinutes(4500L));
+        Talk talk5 = Talk.normalTalk("Talk 5",Duration.ofMinutes(30L));
 
         List<Talk> unscheduledTalks = new ArrayList();
         unscheduledTalks.add(talk1);
         unscheduledTalks.add(talk2);
         unscheduledTalks.add(talk3);
         unscheduledTalks.add(talk4);
+        unscheduledTalks.add(talk5);
 
-        final Optional<Talk> talk = Track.FindTalkToSchedule(unscheduledTalks, Track.Session.MORNING);
-        assertThat(talk.get().talkDuration,is(equalTo(talk1.talkDuration)));
+        final Track track = new Track("Test Track");
+
+        Track.Session morning = track.new Session(LocalTime.parse("09:00:00"),LocalTime.parse("12:00:00"),Duration.ofMinutes(180L));
+        //private final Session afternoon = new Session(LocalTime.parse("13:00:00"),LocalTime.parse("17:00:00"),Duration.ofMinutes(180L),Duration.ofMinutes(240L));
+
+
+        final Optional<Talk> talk = Track.FindTalkToSchedule(unscheduledTalks, morning);
+        assertThat(talk.get().talkDuration,is(equalTo(talk5.talkDuration)));
     }
 
     @Test

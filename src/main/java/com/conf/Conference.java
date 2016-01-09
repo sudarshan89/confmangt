@@ -44,7 +44,6 @@ public class Conference {
             for (Track track : tracks) {
                 track.scheduleTalks(unscheduledTalks);
                 track.scheduleEmptyTalks();
-                track.resetSessionTimeConsumed();
                 System.out.println(track.toString());
             }
 
