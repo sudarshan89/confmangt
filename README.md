@@ -3,7 +3,7 @@ Conference Management -
 
 **The repository is a solution for a conference management code kata. The kata is described in detail after the solution.**
 
-
+![Badge](https://img.shields.io/shippable/5507a66a5ab6cc1352a0fe1e.svg)
 
 ## Solution approach
 
