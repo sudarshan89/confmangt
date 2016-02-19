@@ -11,13 +11,16 @@ The domain model looks like the below.
 
 ![Domain Model](/docs/domain_model.png)
 
-* A Conference to multiple Tracks
-* Each Track can have 2 Sessions (Morning and Afternoon)
-* Each Track also has a multiple Talks where each Talk is either in the Morning or Afternoon session.
+
+####Domain model relationships.
+
+* A Conference has multiple Tracks
+* Each Track has 2 Sessions (Morning and Afternoon)
+* Each Track also has multiple Talks where each Talk is either in the Morning or Afternoon session.
 
 The algorithm used to schedule a talk is as follows.
 
-Pick the talk which can fit into the available time in the session, amongst all the candidate talks pick
+Pick all the talks which fit into the available time in the session, amongst all the candidate talks pick
 the talk which _best fits_ the available time in the session and if there are multiple talks
 that fit equally well then pick the talk with highest duration.
 
