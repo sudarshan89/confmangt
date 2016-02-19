@@ -1,7 +1,7 @@
-Conference Management
+Conference Management -
 =========
 
-**The repository is a solution for a conference management code kata. The kata is described in the paragraphs below**
+**The repository is a solution for a conference management code kata. The kata is described in the below paragraphs**
 
 
 You are planning a big programming conference and have received many proposals which have passed the initial screen process but you're having trouble fitting them into the time constraints of the day -- there are so many possibilities! So you write a program to do it for you.
@@ -69,6 +69,27 @@ Track 2:
 * 03:15PM Ruby vs. Clojure for Back-End Development 30min
 * 03:45PM A World Without HackerNews 30min
 * 04:15PM Networking Event
-* 
+
 
 ## Solution approach
+
+The domain model looks like the below.
+
+![Domain Model](/docs/domain_model.png)
+Format: ![Domain model](/docs/domain_model.png)
+
+* A Conference to multiple Tracks
+* Each Track can have 2 Sessions (Morning and Afternoon)
+* Each Track also has a multiple Talks where each Talk is either in the Morning or Afternoon session.
+
+The algorithm used to schedule a talk is as follows.
+
+Pick the talk which can fit into the available time in the session, amongst all the candidate talks pick
+the talk which _best fits_ the available time in the session and if there are multiple talks
+that fit equally well then pick the talk with highest duration.
+
+
+_best fits_ defined as `available time % talk duration` is smallest compared to all other candidate talks.
+
+
+The kata was picked from [here](http://www.solveitinjava.com/2013/07/problem-statement-conference-track.html)

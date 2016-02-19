@@ -10,9 +10,6 @@ import static java.util.Arrays.asList;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.comparingLong;
 
-/**
- * @TODO fillerTalk related logic needs to move into a enum which should be put into the Session inner class
- */
 class Track {
 
     private static final Talk LUNCH = Talk.lunch();
