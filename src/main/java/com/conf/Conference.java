@@ -41,11 +41,11 @@ public class Conference {
     }
 
     private void scheduleTalks(List<Talk> unscheduledTalks) {
-            for (Track track : tracks) {
-                track.scheduleTalks(unscheduledTalks);
-                track.scheduleEmptyTalks();
-                System.out.println(track.toString());
-            }
+        for (Track track : tracks) {
+            track.scheduleTalks(unscheduledTalks);
+            track.scheduleEmptyTalks();
+            System.out.println(track.toString());
+        }
 
     }
 

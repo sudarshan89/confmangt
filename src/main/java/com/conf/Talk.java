@@ -21,7 +21,7 @@ class Talk {
 
     static Talk lunch() {
         final Talk lunch = new Talk("Lunch", Duration.ofHours(1L));
-        lunch.schedule(LocalTime.of(12,00));
+        lunch.schedule(LocalTime.of(12, 00));
         return lunch;
     }
 
@@ -59,6 +59,6 @@ class Talk {
 
     @Override
     public String toString() {
-        return startsOn +" "+ talkName + " " +talkDuration.toMinutes() + "min";
+        return startsOn + " " + talkName + " " + talkDuration.toMinutes() + "min";
     }
 }

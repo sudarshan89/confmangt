@@ -15,19 +15,37 @@ class Track {
     private static final Talk LUNCH = Talk.lunch();
 
     final String name;
-
-    private final Session morning = Session.MorningSession(LocalTime.parse("09:00:00"),LocalTime.parse("12:00:00"), Duration.ofMinutes(180L));
-    private final Session afternoon = Session.NoonSession(LocalTime.parse("13:00:00"),LocalTime.parse("17:00:00"),Duration.ofMinutes(180L),Duration.ofMinutes(240L));
-
-    private Collection<Session> allSessions(){
-        return asList(morning,afternoon);
-    }
-
-
     final List<Talk> talks = new ArrayList<>();
+    private final Session morning = Session.MorningSession(LocalTime.parse("09:00:00"), LocalTime.parse("12:00:00"), Duration.ofMinutes(180L));
+    private final Session afternoon = Session.NoonSession(LocalTime.parse("13:00:00"), LocalTime.parse("17:00:00"), Duration.ofMinutes(180L), Duration.ofMinutes(240L));
+
 
     Track(String name) {
         this.name = name;
+    }
+
+    /**
+     * @param unscheduledTalks
+     * @param session
+     * @return It will pick the talk which can fit into the available time in the session amongst all the candidate talks it will pick
+     * the talk where (available time % talk duration) is smallest and if there are multiple talks
+     * with the same value, then it will pick the talk with highest duration
+     */
+    static Optional<Talk> FindTalkToSchedule(List<Talk> unscheduledTalks, Session session) {
+        final Stream<Talk> eligibleTalks = unscheduledTalks.stream().filter(unscheduledTalk -> session.canScheduleTalk(unscheduledTalk.talkDuration));
+        final Comparator<Talk> byAscendingSessionAvailableTimeModuloTalkDuration = comparing(
+                (Talk unscheduledTalk) -> session.timeAvailable().toMinutes() % unscheduledTalk.talkDuration.toMinutes());
+        final Comparator<Talk> byDescendingTalkByDuration = comparingLong((Talk unscheduledTalk) -> unscheduledTalk.talkDuration.toMinutes()).reversed();
+        final Comparator<Talk> talkComparator = byAscendingSessionAvailableTimeModuloTalkDuration.thenComparing(byDescendingTalkByDuration);
+        return eligibleTalks.min(talkComparator);
+    }
+
+    static boolean isGreaterThan(Duration left, Duration right) {
+        return left.compareTo(right) > 0;
+    }
+
+    private Collection<Session> allSessions() {
+        return asList(morning, afternoon);
     }
 
     List<Talk> scheduleTalks(List<Talk> unscheduledTalks) {
@@ -52,22 +70,6 @@ class Track {
         return talks;
     }
 
-    /**
-     * @param unscheduledTalks
-     * @param session
-     * @return It will pick the talk which can fit into the available time in the session amongst all the candidate talks it will pick
-     * the talk where (available time % talk duration) is smallest and if there are multiple talks
-     * with the same value, then it will pick the talk with highest duration
-     */
-    static Optional<Talk> FindTalkToSchedule(List<Talk> unscheduledTalks, Session session) {
-        final Stream<Talk> eligibleTalks = unscheduledTalks.stream().filter(unscheduledTalk -> session.canScheduleTalk(unscheduledTalk.talkDuration));
-        final Comparator<Talk> byAscendingSessionAvailableTimeModuloTalkDuration = comparing(
-                (Talk unscheduledTalk) -> session.timeAvailable().toMinutes() % unscheduledTalk.talkDuration.toMinutes());
-        final Comparator<Talk> byDescendingTalkByDuration = comparingLong((Talk unscheduledTalk) -> unscheduledTalk.talkDuration.toMinutes()).reversed();
-        final Comparator<Talk> talkComparator = byAscendingSessionAvailableTimeModuloTalkDuration.thenComparing(byDescendingTalkByDuration);
-        return eligibleTalks.min(talkComparator);
-    }
-
     private void scheduleTalk(Talk talk, Session session) {
         final LocalTime startsOn = session.startsAt.plusMinutes(session.getTimeConsumed().toMinutes());
         session.addTimeConsumed(talk.talkDuration);
@@ -84,10 +86,6 @@ class Track {
                 talks.add(fillerTalk);
             }
         }
-    }
-
-    static boolean isGreaterThan(Duration left, Duration right) {
-        return left.compareTo(right) > 0;
     }
 
     @Override
