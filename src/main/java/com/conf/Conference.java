@@ -41,6 +41,7 @@ public class Conference {
     }
 
     private void scheduleTalks(List<Talk> unscheduledTalks) {
+        System.out.println("Conference Name : " + name);
         for (Track track : tracks) {
             track.scheduleTalks(unscheduledTalks);
             track.scheduleEmptyTalks();

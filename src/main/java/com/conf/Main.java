@@ -25,15 +25,8 @@ public class Main {
         } catch (Exception ex) {
             System.out.println("Too bad invalid input, lets go with 2 tracks");
         }
-        System.out.println(numberOfTracks);
         final List<String> lines = readFile(fileName);
         Conference.Kickstart(lines, numberOfTracks);
-
-        test(() -> new String("Hello"));
-    }
-
-    public static void test(Supplier<String> helloworld){
-
     }
 
     private static List<String> readFile(String fileName) throws IOException {
