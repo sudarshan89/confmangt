@@ -3,7 +3,7 @@ Conference Management -
 
 **The repository is a solution for a conference management code kata. The kata is described in detail after the solution.**
 
-![Badge](https://img.shields.io/shippable/5507a66a5ab6cc1352a0fe1e.svg) [![Codacy Badge](https://api.codacy.com/project/badge/grade/531949d975a74254988cb4a32d2d042c)](https://www.codacy.com/app/sudarshan89/confmangt)
+[![Run Status](https://api.shippable.com/projects/5507a66a5ab6cc1352a0fe1e/badge?branch=master)](https://app.shippable.com/projects/5507a66a5ab6cc1352a0fe1e) [![Codacy Badge](https://api.codacy.com/project/badge/grade/531949d975a74254988cb4a32d2d042c)](https://www.codacy.com/app/sudarshan89/confmangt)
 
 ## Solution approach
 
